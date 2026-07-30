@@ -17,6 +17,10 @@ A single, self-contained `index.html` designed for a widescreen lobby display (o
 
 The seven petals follow **Living Building Challenge 4.0**: Place, Water, Energy, Health + Happiness, Materials, Equity, Beauty. Energy and Water are metered live; Health + Happiness is "live-capable" (can stream from the same building sensors); the remaining four are documented in the companion tracker.
 
+### Living Badlands scene
+
+The backdrop is a real-time North Dakota Badlands panorama. A day-night cycle moves the sun and moon along an arc, shifts the sky through dawn / day / golden hour / sunset / dusk / night, and reveals stars after dark — all keyed to Medora's local time and sunrise/sunset. It also reads **live Medora weather** from the free [Open-Meteo](https://open-meteo.com) API (no key required, so it works on a static page) and renders the conditions: clouds, rain, drizzle, snow, sleet/freezing rain, fog, and thunderstorms with lightning, with wind driving the drift. A small chip shows the current temperature and condition. If the weather request ever fails, the scene falls back to the time-of-day cycle under clear skies.
+
 ## Repository layout
 
 ```

@@ -38,10 +38,35 @@
 
   /* ---------- STAGE (scenery + KPIs) ---------- */
   .stage{position:relative;overflow:hidden}
-  .scene{position:absolute;inset:0;width:100%;height:100%;z-index:0}
-  .scene svg{width:100%;height:100%;display:block}
-  .sun{transform-origin:center;animation:glow 6s ease-in-out infinite}
-  @keyframes glow{0%,100%{opacity:.85}50%{opacity:1}}
+  .scene{position:absolute;inset:0;overflow:hidden;z-index:0}
+  .scene .layer{position:absolute;inset:0;pointer-events:none}
+  .sky{position:absolute;inset:0;z-index:0;background:#12222a;transition:background 3s linear}
+  .stars{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity 3s linear}
+  .star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--td,4s) ease-in-out infinite alternate}
+  @keyframes twinkle{from{opacity:.12}to{opacity:.95}}
+  .clouds{position:absolute;inset:0;z-index:2;overflow:hidden}
+  .cloud{position:absolute;border-radius:100px;filter:blur(7px);will-change:transform;animation:drift linear infinite}
+  @keyframes drift{from{transform:translateX(-38vw)}to{transform:translateX(138vw)}}
+  .celestial{position:absolute;inset:0;z-index:3;overflow:hidden;transition:opacity 3s linear}
+  .orb{position:absolute;border-radius:50%;transform:translate(-50%,-50%)}
+  .scene .terrain{position:absolute;inset:0;z-index:4}
+  .scene .terrain svg{width:100%;height:100%;display:block}
+  .precip{position:absolute;inset:0;z-index:5;overflow:hidden;transform-origin:50% 40%;transition:transform 2s ease}
+  .drop{position:absolute;top:-16%;width:1.5px;border-radius:2px;background:linear-gradient(transparent,rgba(176,200,226,.72));will-change:transform;animation:fall linear infinite}
+  @keyframes fall{to{transform:translateY(130vh)}}
+  .flake{position:absolute;top:-10%;border-radius:50%;background:#eef4f8;will-change:transform;animation:snowfall linear infinite}
+  @keyframes snowfall{to{transform:translateY(130vh) translateX(var(--dx,18px))}}
+  .fog{position:absolute;inset:0;z-index:6;opacity:0;transition:opacity 3s linear;background:linear-gradient(180deg,rgba(198,203,203,0) 22%,rgba(204,208,208,.5) 100%)}
+  .flash{position:absolute;inset:0;z-index:7;background:#eaf0ff;opacity:0}
+  .flash.zap{animation:zap .8s ease-out}
+  @keyframes zap{0%{opacity:0}5%{opacity:.85}11%{opacity:.15}17%{opacity:.72}28%{opacity:0}100%{opacity:0}}
+  .wx-chip{position:absolute;left:clamp(20px,2.6vw,50px);bottom:clamp(10px,2vh,26px);z-index:10;
+    display:flex;align-items:center;gap:10px;background:var(--panel);backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:12px;
+    padding:8px 14px;box-shadow:0 8px 24px rgba(0,0,0,.32)}
+  .wx-chip .ic{font-size:clamp(15px,1.3vw,20px)}
+  .wx-chip .tp{font-weight:700;font-variant-numeric:tabular-nums;font-size:clamp(12px,1vw,16px)}
+  .wx-chip .ds{color:var(--muted);font-size:clamp(9px,.72vw,12px);text-transform:uppercase;letter-spacing:.08em}
 
   .kpis{position:relative;z-index:10;height:100%;display:grid;
     grid-template-columns:repeat(4,1fr);gap:clamp(12px,1.4vw,26px);
@@ -152,6 +177,7 @@
       <div class="big" id="headline">—</div>
       <div class="hint">Select a petal below to drill in ↓</div>
     </div>
+    <div class="wx-chip" id="wxChip" style="display:none"></div>
 
     <!-- DETAIL (fills the stage; rail below stays as navigation) -->
     <div class="detail" id="detail">
@@ -170,50 +196,258 @@
 <script>
 const CONFIG={refreshMs:5000,energyTargetPct:105};
 
-/* ================= BADLANDS VECTOR SCENE ================= */
-function badlandsSVG(full){
-  // layered eroded buttes + striations, warm-earth palette against dusk sky
+/* ================= BADLANDS TERRAIN (static silhouette) ================= */
+function terrainSVG(){
   return `<svg viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#12222a"/>
-        <stop offset="46%" stop-color="#1c2f31"/>
-        <stop offset="72%" stop-color="#3a3b2f"/>
-        <stop offset="100%" stop-color="#4a3a28"/>
-      </linearGradient>
-      <radialGradient id="sunG" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#ffe6a8"/>
-        <stop offset="42%" stop-color="#f4b451"/>
-        <stop offset="100%" stop-color="#f4b451" stop-opacity="0"/>
-      </radialGradient>
       <linearGradient id="r1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a5a3c"/><stop offset="100%" stop-color="#5c4630"/></linearGradient>
       <linearGradient id="r2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8a5b39"/><stop offset="100%" stop-color="#5f3d27"/></linearGradient>
       <linearGradient id="r3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6d4326"/><stop offset="100%" stop-color="#3f2817"/></linearGradient>
       <linearGradient id="r4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3c2c1e"/><stop offset="100%" stop-color="#241811"/></linearGradient>
     </defs>
-    <rect width="1600" height="600" fill="url(#sky)"/>
-    <circle class="sun" cx="1180" cy="205" r="150" fill="url(#sunG)"/>
-    <circle class="sun" cx="1180" cy="205" r="46" fill="#ffdf9a"/>
-    <!-- far mesas -->
     <path fill="url(#r1)" opacity="0.75" d="M0,340 L120,318 L150,332 L300,300 L340,300 L360,315 L520,286 L600,300 L760,278 L900,300 L1040,286 L1180,306 L1340,290 L1460,310 L1600,300 L1600,600 L0,600 Z"/>
-    <!-- mid buttes with flat tops -->
-    <path fill="url(#r2)" d="M0,410 L90,410 L120,372 L250,372 L280,408 L430,404 L470,352 L560,352 L588,398 L470,352 M560,352 L588,398 L740,392 L780,360 L900,360 L926,404 L1080,398 L1120,366 L1210,366 L1240,410 L1400,404 L1440,378 L1540,378 L1560,412 L1600,410 L1600,600 L0,600 Z"/>
-    <!-- striation lines on mid layer -->
+    <path fill="url(#r2)" d="M0,410 L90,410 L120,372 L250,372 L280,408 L430,404 L470,352 L560,352 L588,398 L740,392 L780,360 L900,360 L926,404 L1080,398 L1120,366 L1210,366 L1240,410 L1400,404 L1440,378 L1540,378 L1560,412 L1600,410 L1600,600 L0,600 Z"/>
     <g stroke="#4a3320" stroke-width="2" opacity="0.45">
       <path fill="none" d="M120,388 L250,388"/><path fill="none" d="M470,372 L560,372"/>
       <path fill="none" d="M780,380 L900,380"/><path fill="none" d="M1120,386 L1210,386"/>
       <path fill="none" d="M1440,398 L1540,398"/>
     </g>
-    <!-- near ridge -->
     <path fill="url(#r3)" d="M0,486 L160,470 L230,430 L330,430 L390,476 L540,466 L640,436 L720,436 L770,480 L960,470 L1050,440 L1140,440 L1200,486 L1380,474 L1470,448 L1560,448 L1600,486 L1600,600 L0,600 Z"/>
-    <!-- foreground -->
     <path fill="url(#r4)" d="M0,548 L220,532 L360,556 L560,536 L820,560 L1080,538 L1320,560 L1600,540 L1600,600 L0,600 Z"/>
-    <!-- foreground scrub -->
     <g fill="#1c140d" opacity="0.9">
       <path d="M180,560 l6,-22 l6,22 z"/><path d="M470,566 l5,-18 l5,18 z"/>
       <path d="M980,566 l7,-24 l7,24 z"/><path d="M1300,566 l5,-18 l5,18 z"/>
     </g>
   </svg>`;
+}
+
+/* ================= SKY / SUN / WEATHER ENGINE =================
+   Time-of-day drives the sky, sun/moon arc and stars; live Medora
+   weather (Open-Meteo, no API key) drives clouds, precip, fog, storms. */
+const GEO={lat:46.9139,lon:-103.5236,tz:'America/Chicago'};
+let WXDATA=null, sunTimes={rise:390,set:1289};   // default 06:30 / 21:29 (minutes)
+
+function buildScene(){
+  const s=document.getElementById('scene');
+  s.innerHTML=`
+    <div class="sky" id="sky"></div>
+    <div class="stars layer" id="stars"></div>
+    <div class="clouds layer" id="clouds"></div>
+    <div class="celestial layer" id="celestial"></div>
+    <div class="terrain">${terrainSVG()}</div>
+    <div class="precip layer" id="precip"></div>
+    <div class="fog layer" id="fog"></div>
+    <div class="flash" id="flash"></div>`;
+  let h='';
+  for(let i=0;i<90;i++){
+    const x=(Math.random()*100).toFixed(2), y=(Math.random()*46).toFixed(2);
+    const sz=Math.random()<0.15?2.2:1.3, d=(2+Math.random()*4).toFixed(1);
+    h+=`<div class="star" style="left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;--td:${d}s;animation-delay:${(Math.random()*4).toFixed(1)}s"></div>`;
+  }
+  document.getElementById('stars').innerHTML=h;
+}
+
+function minsFromISO(t){ const m=/T(\d\d):(\d\d)/.exec(t); return m?(+m[1]*60 + +m[2]):null; }
+function medoraMinutes(){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:GEO.tz,hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+  let hh=+p.find(x=>x.type==='hour').value, mm=+p.find(x=>x.type==='minute').value;
+  if(hh===24)hh=0; return hh*60+mm;
+}
+
+function wmoMap(code,cloud){
+  code=+code;
+  const M=o=>Object.assign({label:'',sky:'clear',precip:'none',intensity:0,fog:false,storm:false},o);
+  const T={0:M({label:'Clear',sky:'clear'}),1:M({label:'Mainly clear',sky:'clear'}),
+    2:M({label:'Partly cloudy',sky:'cloudy'}),3:M({label:'Overcast',sky:'overcast'}),
+    45:M({label:'Fog',sky:'overcast',fog:true}),48:M({label:'Rime fog',sky:'overcast',fog:true}),
+    51:M({label:'Light drizzle',sky:'overcast',precip:'rain',intensity:1}),
+    53:M({label:'Drizzle',sky:'overcast',precip:'rain',intensity:1}),
+    55:M({label:'Heavy drizzle',sky:'overcast',precip:'rain',intensity:2}),
+    56:M({label:'Freezing drizzle',sky:'overcast',precip:'sleet',intensity:1}),
+    57:M({label:'Freezing drizzle',sky:'overcast',precip:'sleet',intensity:2}),
+    61:M({label:'Light rain',sky:'overcast',precip:'rain',intensity:1}),
+    63:M({label:'Rain',sky:'overcast',precip:'rain',intensity:2}),
+    65:M({label:'Heavy rain',sky:'overcast',precip:'rain',intensity:3}),
+    66:M({label:'Freezing rain',sky:'overcast',precip:'sleet',intensity:2}),
+    67:M({label:'Freezing rain',sky:'overcast',precip:'sleet',intensity:3}),
+    71:M({label:'Light snow',sky:'overcast',precip:'snow',intensity:1}),
+    73:M({label:'Snow',sky:'overcast',precip:'snow',intensity:2}),
+    75:M({label:'Heavy snow',sky:'overcast',precip:'snow',intensity:3}),
+    77:M({label:'Snow grains',sky:'overcast',precip:'snow',intensity:1}),
+    80:M({label:'Light showers',sky:'cloudy',precip:'rain',intensity:1}),
+    81:M({label:'Rain showers',sky:'cloudy',precip:'rain',intensity:2}),
+    82:M({label:'Violent showers',sky:'overcast',precip:'rain',intensity:3}),
+    85:M({label:'Snow showers',sky:'cloudy',precip:'snow',intensity:2}),
+    86:M({label:'Heavy snow showers',sky:'overcast',precip:'snow',intensity:3}),
+    95:M({label:'Thunderstorm',sky:'overcast',precip:'rain',intensity:2,storm:true}),
+    96:M({label:'Storm w/ hail',sky:'overcast',precip:'rain',intensity:3,storm:true}),
+    99:M({label:'Severe storm',sky:'overcast',precip:'rain',intensity:3,storm:true})};
+  return T[code] || M({label:'—',sky: cloud>80?'overcast':cloud>40?'cloudy':'clear'});
+}
+function wxIcon(wx,isDay){
+  if(wx.storm)return '⛈️'; if(wx.fog)return '🌫️';
+  if(wx.precip==='snow')return '🌨️'; if(wx.precip==='sleet')return '🌧️';
+  if(wx.precip==='rain')return isDay?'🌦️':'🌧️';
+  if(wx.sky==='overcast')return '☁️';
+  if(wx.sky==='cloudy')return isDay?'⛅':'☁️';
+  return isDay?'☀️':'🌙';
+}
+
+const SKY={
+  night:'linear-gradient(180deg,#070d1e 0%,#0b1330 45%,#121a3a 76%,#1a2038 100%)',
+  dawn:'linear-gradient(180deg,#1b2247 0%,#4b3a68 38%,#b56a7d 68%,#ec9f68 100%)',
+  morning:'linear-gradient(180deg,#356f9e 0%,#84b7d6 44%,#ead9b6 80%,#eec488 100%)',
+  midday:'linear-gradient(180deg,#3a80b6 0%,#8ec6e8 45%,#d9e7ef 82%,#e7dcc0 100%)',
+  golden:'linear-gradient(180deg,#3c5a86 0%,#c58a58 52%,#f0b45e 80%,#f7d189 100%)',
+  sunset:'linear-gradient(180deg,#2a2a57 0%,#8b3d6b 38%,#d85a45 66%,#f4a44c 100%)',
+  dusk:'linear-gradient(180deg,#131a38 0%,#3a2f5e 44%,#763f5b 74%,#b56a55 100%)'
+};
+const SKYW={
+  overcastDay:'linear-gradient(180deg,#5c6b74 0%,#7d8b90 55%,#9aa4a4 100%)',
+  overcastNight:'linear-gradient(180deg,#141a24 0%,#232b31 60%,#313a3d 100%)',
+  precipDay:'linear-gradient(180deg,#4a5760 0%,#6b767c 55%,#88908f 100%)',
+  precipNight:'linear-gradient(180deg,#101720 0%,#1d242b 60%,#2b3236 100%)',
+  stormDay:'linear-gradient(180deg,#33383f 0%,#474d52 55%,#5a5f60 100%)',
+  stormNight:'linear-gradient(180deg,#0a0e15 0%,#161b22 60%,#242a2e 100%)',
+  snowDay:'linear-gradient(180deg,#7f8a92 0%,#9aa3a8 55%,#b6bcbb 100%)',
+  snowNight:'linear-gradient(180deg,#1a2029 0%,#2a323a 60%,#3b4247 100%)'
+};
+function phaseFor(m,rise,set){
+  if(m<rise-45||m>set+45)return 'night';
+  if(m<rise+30)return 'dawn';
+  if(m>set+15)return 'dusk';
+  if(m>set-15)return 'sunset';
+  if(m>set-75)return 'golden';
+  const mid=(rise+set)/2;
+  if(Math.abs(m-mid)<160)return 'midday';
+  return 'morning';
+}
+
+function computeScene(){
+  const m=medoraMinutes(), rise=sunTimes.rise, set=sunTimes.set;
+  const phase=phaseFor(m,rise,set);
+  const dayLight=m>=rise-20 && m<=set+20;
+  const wx=WXDATA?WXDATA.wx:wmoMap(0,0);
+
+  let bg=SKY[phase];
+  if(wx.storm) bg=dayLight?SKYW.stormDay:SKYW.stormNight;
+  else if(wx.precip==='snow') bg=dayLight?SKYW.snowDay:SKYW.snowNight;
+  else if(wx.fog||wx.sky==='overcast'){
+    bg = wx.precip!=='none' ? (dayLight?SKYW.precipDay:SKYW.precipNight)
+                            : (dayLight?SKYW.overcastDay:SKYW.overcastNight);
+  } else if(wx.precip!=='none') bg=dayLight?SKYW.precipDay:SKYW.precipNight;
+  document.getElementById('sky').style.background=bg;
+
+  const darkness=(phase==='night')?1:(phase==='dawn'||phase==='dusk')?0.5:0;
+  const cloudHide=(wx.sky==='overcast'||wx.storm||wx.fog)?0.12:(wx.sky==='cloudy'?0.55:1);
+  document.getElementById('stars').style.opacity=(darkness*cloudHide).toFixed(2);
+
+  placeCelestial(m,rise,set,dayLight,wx);
+  renderClouds(wx,dayLight);
+  renderPrecip(wx);
+  document.getElementById('fog').style.opacity=wx.fog?1:0;
+  scheduleLightning(wx.storm);
+  updateChip(wx);
+}
+
+function placeCelestial(m,rise,set,dayLight,wx){
+  const c=document.getElementById('celestial'); let html='';
+  if(dayLight){
+    const frac=Math.min(1,Math.max(0,(m-rise)/Math.max(1,set-rise)));
+    const x=6+88*frac, elev=Math.sin(frac*Math.PI), y=54-elev*42;
+    const warm=elev<0.28, core=warm?'#ffd17a':'#fff2cf', glow=warm?'#f4a04a':'#ffd06a';
+    html=`<div class="orb" style="left:${x}%;top:${y}%;width:clamp(120px,16vw,240px);height:clamp(120px,16vw,240px);background:radial-gradient(circle,${glow}cc 0%,${glow}55 38%,transparent 66%)"></div>
+      <div class="orb" style="left:${x}%;top:${y}%;width:clamp(34px,4.4vw,70px);height:clamp(34px,4.4vw,70px);background:radial-gradient(circle at 42% 38%,#fff,${core});box-shadow:0 0 42px ${glow}"></div>`;
+    c.style.opacity= wx.storm?0:(wx.fog?0.12:(wx.sky==='overcast'?0.22:(wx.sky==='cloudy'?0.85:1)));
+  } else {
+    const span=(1440-set)+rise; let mm=m; if(mm<rise)mm+=1440;
+    const frac=Math.min(1,Math.max(0,(mm-set)/Math.max(1,span)));
+    const x=8+84*frac, elev=Math.sin(frac*Math.PI), y=54-elev*40;
+    html=`<div class="orb" style="left:${x}%;top:${y}%;width:clamp(62px,7.6vw,120px);height:clamp(62px,7.6vw,120px);background:radial-gradient(circle,#cfd8e6aa 0%,#cfd8e633 42%,transparent 66%)"></div>
+      <div class="orb" style="left:${x}%;top:${y}%;width:clamp(26px,3.2vw,52px);height:clamp(26px,3.2vw,52px);background:radial-gradient(circle at 38% 36%,#f4f7fb,#c3ccd8);box-shadow:0 0 26px #aeb9caaa"></div>`;
+    c.style.opacity= wx.storm?0.12:((wx.fog||wx.sky==='overcast')?0.3:1);
+  }
+  c.innerHTML=html;
+}
+
+let cloudSig='';
+function renderClouds(wx,dayLight){
+  let n={clear:0,cloudy:4,overcast:9}[wx.sky]||0; if(wx.storm)n=10;
+  const windK=WXDATA?WXDATA.windK:0;
+  const sig=wx.sky+'|'+wx.storm+'|'+dayLight+'|'+Math.round(windK*3);
+  if(sig===cloudSig)return; cloudSig=sig;
+  const el=document.getElementById('clouds');
+  if(n===0){el.innerHTML='';return;}
+  const dark=wx.storm?'#2a2f35':(dayLight?'#c9d2d6':'#333b41');
+  const light=wx.storm?'#3a4149':(dayLight?'#eef2f4':'#454e55');
+  const op=(wx.sky==='overcast'||wx.storm)?0.9:0.68;
+  let h='';
+  for(let i=0;i<n;i++){
+    const w=(180+Math.random()*260)|0, hh=(w*0.42)|0, top=(4+Math.random()*34).toFixed(1);
+    const dur=((38+Math.random()*40)/(1+windK)).toFixed(1), delay=(-Math.random()*dur).toFixed(1);
+    h+=`<div class="cloud" style="width:${w}px;height:${hh}px;top:${top}%;background:radial-gradient(circle at 40% 45%,${light},${dark});opacity:${op};animation-duration:${dur}s;animation-delay:${delay}s"></div>`;
+  }
+  el.innerHTML=h;
+}
+
+let precipSig='';
+function renderPrecip(wx){
+  const wind=WXDATA?WXDATA.wind:6;
+  const sig=wx.precip+'|'+wx.intensity+'|'+Math.round(wind/6);
+  if(sig===precipSig)return; precipSig=sig;
+  const el=document.getElementById('precip');
+  const lean=Math.max(-18,Math.min(18,(wind-4)*(wx.precip==='snow'?0.5:1.1)));
+  el.style.transform=`rotate(${lean.toFixed(0)}deg) scale(1.3)`;
+  if(wx.precip==='none'){el.innerHTML='';return;}
+  const n={1:60,2:110,3:170}[wx.intensity]||80;
+  let h='';
+  if(wx.precip==='snow'){
+    for(let i=0;i<n;i++){
+      const x=(Math.random()*100).toFixed(2), sz=(2+Math.random()*3).toFixed(1);
+      const dur=(6+Math.random()*6).toFixed(1), delay=(-Math.random()*8).toFixed(1);
+      const dx=((Math.random()*30-10)).toFixed(0);
+      h+=`<div class="flake" style="left:${x}%;width:${sz}px;height:${sz}px;opacity:${(0.5+Math.random()*0.5).toFixed(2)};--dx:${dx}px;animation-duration:${dur}s;animation-delay:${delay}s"></div>`;
+    }
+  } else {
+    const sleet=wx.precip==='sleet';
+    for(let i=0;i<n;i++){
+      const x=(Math.random()*100).toFixed(2);
+      const len=(sleet?(6+Math.random()*6):(12+Math.random()*16)).toFixed(0);
+      const dur=((sleet?0.5:0.35)+Math.random()*0.35).toFixed(2), delay=(-Math.random()).toFixed(2);
+      h+=`<div class="drop" style="left:${x}%;height:${len}px;animation-duration:${dur}s;animation-delay:${delay}s;opacity:${(0.4+Math.random()*0.5).toFixed(2)}"></div>`;
+    }
+  }
+  el.innerHTML=h;
+}
+
+let stormOn=false, boltTimer=null;
+function scheduleLightning(on){
+  if(on===stormOn)return; stormOn=on;
+  if(boltTimer){clearTimeout(boltTimer);boltTimer=null;}
+  if(!on)return;
+  const flash=document.getElementById('flash');
+  const bolt=()=>{ flash.classList.remove('zap'); void flash.offsetWidth; flash.classList.add('zap');
+    boltTimer=setTimeout(bolt,4000+Math.random()*9000); };
+  boltTimer=setTimeout(bolt,2000+Math.random()*4000);
+}
+
+function updateChip(wx){
+  const chip=document.getElementById('wxChip'); if(!chip)return;
+  if(!WXDATA){chip.style.display='none';return;}
+  chip.style.display='flex';
+  chip.innerHTML=`<span class="ic">${wxIcon(wx,WXDATA.isDay)}</span><span><span class="tp">${Math.round(WXDATA.temp)}°F</span> <span class="ds">Medora · ${wx.label||WXDATA.desc}</span></span>`;
+}
+
+async function fetchWeather(){
+  try{
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${GEO.lat}&longitude=${GEO.lon}&current=temperature_2m,weather_code,wind_speed_10m,cloud_cover,is_day,precipitation&daily=sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FChicago&forecast_days=1`;
+    const r=await fetch(u); const d=await r.json(); const cur=d.current;
+    const wx=wmoMap(cur.weather_code,cur.cloud_cover);
+    WXDATA={wx,temp:cur.temperature_2m,wind:cur.wind_speed_10m,windK:Math.min(1.6,(cur.wind_speed_10m||0)/25),cloud:cur.cloud_cover,isDay:cur.is_day===1,desc:wx.label};
+    if(d.daily&&d.daily.sunrise){const rs=minsFromISO(d.daily.sunrise[0]),ss=minsFromISO(d.daily.sunset[0]); if(rs!=null)sunTimes.rise=rs; if(ss!=null)sunTimes.set=ss;}
+    cloudSig='';precipSig='';
+  }catch(e){/* offline: keep time-of-day, default clear */}
+  computeScene();
 }
 
 /* ================= PETAL DATA ================= */
@@ -437,8 +671,12 @@ function clock(){const n=new Date();
   document.getElementById('date').textContent=n.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});}
 function loop(){tickDemo();renderKPIs();refreshRail();
   if(current&&(current.status==='live'||current.status==='cap'))document.getElementById('vizSlot').innerHTML=vizHTML(current);}
-document.getElementById('scene').innerHTML=badlandsSVG(true);
-document.getElementById('dscene').innerHTML=badlandsSVG(false);
+buildScene();
+document.getElementById('dscene').innerHTML=terrainSVG();
+computeScene();
+fetchWeather();
+setInterval(computeScene,60000);
+setInterval(fetchWeather,600000);
 buildRail();clock();tickDemo();renderKPIs();refreshRail();
 setInterval(clock,1000);setInterval(loop,CONFIG.refreshMs);
 </script>

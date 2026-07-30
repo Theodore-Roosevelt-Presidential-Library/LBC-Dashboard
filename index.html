@@ -455,43 +455,43 @@ const PETALS=[
    imperatives:["Energy + Carbon Reduction","Net Positive Carbon"],
    headline:()=>({big:liveEnergy()+"%",st:"Energy need met"}),
    track:[["Solar generation","kW now · kWh today"],["Geothermal contribution","kW now · kWh-eq today"],["Building energy draw","kW now · kWh today"],["Net-positive ratio","production ÷ consumption · 105% target"],["Carbon avoided","lbs CO₂ offset today"],["Energy use intensity","kBtu/ft²/yr vs LBC cap"]],
-   show:"A <strong>105% net-positive gauge</strong>, solar/geothermal/draw side by side, and a day curve of solar peak vs load. The story: the building is a power plant that happens to be a museum."},
+   show:"The Energy Petal requires true surplus: over a year the building must generate at least <strong>105% of the energy it uses</strong> from on-site renewables like solar, with no on-site combustion. Geothermal exchange lowers the demand so the solar array can clear that bar."},
   {id:"water",name:"Water",icon:"💧",color:"var(--water)",status:"live",
    tagline:"Water in the Badlands is precious — capture it, use it wisely, return it clean.",
    imperatives:["Responsible Water Use","Net Positive Water"],
    headline:()=>({big:liveWater()+"%",st:"Captured vs used"}),
    track:[["Rainwater captured / reused","gallons today"],["Potable water used","gallons today"],["Cistern storage level","gallons on hand"],["Net water balance","captured minus used"],["Irrigation","gallons — non-potable only"],["Greywater treated","gallons cycled on site"]],
-   show:"A capture-vs-use <strong>dial</strong> reading over/under 100%, cistern level, and a net-balance number that stays positive across the year."},
+   show:"The Water Petal calls for <strong>net positive water</strong>: the building meets its needs from captured rain and reused water, then returns what it uses to the site's natural water cycle rather than the sewer. In the semi-arid Badlands, that makes every gallon count."},
   {id:"place",name:"Place",icon:"🗺️",color:"var(--place)",status:"doc",
    tagline:"Roosevelt's Badlands shaped him — this proves the building belongs to the land, not the reverse.",
    imperatives:["Ecology of Place","Urban Agriculture","Habitat Exchange","Human-Powered Living"],
    headline:()=>({big:"1:1",st:"Habitat balanced"}),
    track:[["Native prairie stewarded","acres restored & maintained"],["Habitat exchange","off-site acres = footprint"],["On-site food","lbs/season, interpretive gardens"],["Low-carbon arrivals","% shuttle / EV / foot / cycle"],["EV charging","sessions & kWh"],["Native species","native plantings vs turf"]],
-   show:"A site map of the <strong>stewarded prairie</strong> with a running acreage counter, a transport-mode donut, and a seasonal harvest tally."},
+   show:"The Place Petal roots the building in its landscape: building only on previously developed land, growing food on site, supporting car-free access, and protecting habitat elsewhere <strong>equal in area to the building's footprint</strong>."},
   {id:"health",name:"Health + Happiness",icon:"🌿",color:"var(--health)",status:"cap",
    tagline:"A building measurably good to be inside — clean air, daylight, and views to nature.",
    imperatives:["Healthy Interior Environment","Healthy Interior Performance","Access to Nature"],
    headline:()=>({big:liveCO2(),st:"ppm CO₂ · good"}),
    track:[["CO₂","ppm per zone · freshness"],["Particulates (PM2.5)","µg/m³ live"],["VOCs / air toxins","ppb, periodic testing"],["Daylight autonomy","% of floor area daylit"],["Access to nature","% occupants with a view"],["Occupant satisfaction","quarterly survey score"]],
-   show:"Live <strong>air-quality gauges</strong> (CO₂, PM2.5) straight off the building sensors — live-capable today with what EcoStruxure already reads."},
+   show:"The Health + Happiness Petal sets a standard for life indoors: meeting ventilation requirements, keeping pollutant sources out, and verifying the air with <strong>testing before occupancy and monitoring afterward</strong> — plus daylight and a direct connection to nature."},
   {id:"materials",name:"Materials",icon:"🧱",color:"var(--materials)",status:"doc",
    tagline:"Know what the building is made of — non-toxic, transparent, responsibly sourced, waste-free.",
    imperatives:["Responsible Materials","Red List","Responsible Sourcing","Living Economy Sourcing","Net Positive Waste"],
    headline:()=>({big:"98%",st:"Red List free"}),
    track:[["Red List compliance","% free of banned chemicals"],["Transparency","# Declare / disclosed products"],["Construction waste diverted","% from landfill"],["Operational waste diverted","% ongoing"],["Local sourcing","% within LBC distance bands"],["Embodied carbon","reduction vs baseline"]],
-   show:"A <strong>Red List compliance donut</strong>, a waste-diversion progress bar, and concentric sourcing-radius rings on a map."},
+   show:"The Materials Petal is about transparency: no ingredients from the LBC <strong>Red List</strong> of harmful chemicals, publicly documented (Declare) products, responsibly and locally sourced materials, and construction and operational waste kept out of the landfill."},
   {id:"equity",name:"Equity",icon:"⚖️",color:"var(--equity)",status:"doc",
    tagline:"A place that welcomes everyone and operates fairly.",
    imperatives:["Universal Access","Inclusion"],
    headline:()=>({big:"100%",st:"Universal access"}),
    track:[["Universal design","accessibility checklist met"],["JUST label","social-justice transparency"],["Free / reduced admission","visits served"],["Community access","public program hours"],["Wage & labor equity","JUST metrics"],["Multilingual access","languages supported"]],
-   show:"A universal-access <strong>checklist ring</strong>, the JUST label badge, and counters for free-admission visits and community program hours."},
+   show:"The Equity Petal keeps the place open to everyone: <strong>universal, barrier-free access</strong> regardless of age or ability, and a commitment to fair, transparent labor and social practices verified through the JUST label."},
   {id:"beauty",name:"Beauty",icon:"✨",color:"var(--beauty)",status:"doc",
    tagline:"Design that lifts the spirit — and teaches. This dashboard is part of the petal.",
    imperatives:["Beauty + Biophilia","Education + Inspiration"],
    headline:()=>({big:"61K",st:"People reached"}),
    track:[["Education & tours","programs and attendees"],["Public dashboard reach","this display's views"],["Biophilic design elements","documented features"],["Interpretive content","sustainability exhibits"],["Visitor inspiration","survey sentiment"],["Awards & press","recognition earned"]],
-   show:"A <strong>people-reached counter</strong>, an upcoming-programs strip, and a gallery of biophilic design moments."}
+   show:"The Beauty Petal is required even though it resists measurement: meaningful, nature-inspired design paired with a duty to <strong>educate the public</strong>, including opening to visitors at least one day each year. This dashboard is part of meeting it."}
 ];
 
 /* ================= LIVE DEMO ================= */
@@ -631,7 +631,7 @@ function openDetail(id){
   const tag=p.status==='live'?'<span class="d-tag live">Live metered</span>':p.status==='cap'?'<span class="d-tag cap">Live-capable</span>':'<span class="d-tag doc">Documented</span>';
   const imps=p.imperatives.map(i=>`<span class="imp">${i}</span>`).join('');
   const track=p.track.map(t=>`<li style="--pc:${p.color}"><span class="dot">▸</span><span><strong>${t[0]}</strong> — <span class="k">${t[1]}</span></span></li>`).join('');
-  const src=p.status==='live'?'Fed live by EcoStruxure (PME / EBO).':p.status==='cap'?'Can go live now — reads the same EcoStruxure building sensors.':'Maintained in the LBC Petal Tracker workbook; values shown are illustrative targets.';
+  const src=p.status==='live'?'Metered live through the EcoStruxure system.':p.status==='cap'?'Ready to go live — these readings come from building sensors EcoStruxure already monitors.':'Tracked in the LBC Petal Tracker workbook; figures shown are illustrative until connected.';
   document.getElementById('dbody').innerHTML=`
     <div class="d-top" style="padding:0 0 4px">
       <div class="bubble" style="background:${p.color}22;border:1px solid ${p.color}">${p.icon}</div>
@@ -641,7 +641,7 @@ function openDetail(id){
     <div class="tagline">${p.tagline}</div>
     <div class="cols">
       <div>
-        <div class="seclabel">What we'd show — sample visualization</div>
+        <div class="seclabel">What visitors see</div>
         <div id="vizSlot">${vizHTML(p)}</div>
       </div>
       <div>
@@ -649,7 +649,7 @@ function openDetail(id){
         <ul class="track-list" style="--pc:${p.color}">${track}</ul>
       </div>
     </div>
-    <div class="seclabel">The public story</div>
+    <div class="seclabel">What the Living Building Challenge requires</div>
     <div class="show-box" style="--pc:${p.color}">${p.show}</div>
     <div class="src-note">${src}</div>`;
   document.getElementById('detail').classList.add('open');
